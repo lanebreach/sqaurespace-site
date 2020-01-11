@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Draw GeoJSON points</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.6.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v1.6.1/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map {position: relative; top: 0; bottom: 0; width: 100%; height: 800px;}
+    </style>
+</head>
+<body>
+<style>
+    .mapboxgl-popup {
+        max-width: 400px;
+        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    }
+</style>
+<div id="map"></div>
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoiYWdhZXNzZXIiLCJhIjoiY2pvZGY5bmh4MWJtcTNsbWtmN2RmNnhiNCJ9.iwOotv1u0S92o-Vj2CCjag';
+  var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/agaesser/cjuzybtpj45g71fqx19n42i0j',
+    center: [-122.450577, 37.759108],
+    zoom: 11,
+  });
+
+  map.on('load', function() {
+    const url = 'https://lanebreach-geojson.s3-us-west-1.amazonaws.com/2019/2019.geojson';
+    map.addSource('2019', { type: 'geojson', data: url });
+
+    map.addLayer({
+      'id': 'reports-heatmap',
+      'type': 'heatmap',
+      'source': '2019',
+      'paint': {
+        "heatmap-radius": 6,
+        "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 13, 1, 15, 0]
+      }
+    });
+
+    map.addLayer({
+      'id': 'reports-points',
+      'type': 'circle',
+      'source': '2019',
+      'paint': {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 14, 2, 16, 5],
+        "circle-color": "white",
+        "circle-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15, 1]
+      }
+    });
+  });
+
+  map.on(
+    "mouseenter",
+    "reports-points",
+    () => (this.map.getCanvas().style.cursor = "pointer")
+  );
+
+  map.on(
+    "mouseleave",
+    "reports-points",
+    () => (this.map.getCanvas().style.cursor = "")
+  );
+
+  map.on("click", "reports-points", e => {
+    var props = e.features[0].properties;
+    var coordinates = e.features[0].geometry.coordinates.slice();
+    var timeOpts = { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
+    var time = new Date(props.requested_datetime).toLocaleDateString("en-US", timeOpts);
+    var description = "";
+    var pic = "";
+    var reportLink = "http://mobile311.sfgov.org/reports/" + props.service_request_id;
+
+    if (props.description !== "null") {
+      description = `<b>Details:</b> ${props.description}`
+    }
+
+    if (props.media_url !== "null") {
+      pic = `<img src=${props.media_url} width=100% height=100%>`
+    }
+
+
+    var html = `
+    <div>
+        ${pic}<br>
+        ${time}<br>
+        <b>SF311 report:</b> <a href=${reportLink}>${props.service_request_id}</a><br>
+        <b>Supervisor District:</b> ${props.supervisor_district}<br>
+        <b>Neighborhood:</b> ${props.neighborhoods_sffind_boundaries}<br>
+        ${description}
+    </div>`;
+
+    new mapboxgl.Popup()
+      .setLngLat(coordinates)
+      .setHTML(html)
+      .addTo(map);
+  });
+
+</script>
+
+</body>
+</html>
