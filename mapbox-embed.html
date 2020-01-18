@@ -18,7 +18,17 @@
         font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
     }
 </style>
+
 <div id="map"></div>
+<div id='menu'>
+<!--    <input id='mapbox://styles/agaesser/cjuzybtpj45g71fqx19n42i0j' type='radio' name='rtoggle' value='2019' checked='checked'>-->
+<!--    <label for='2019'>2019</label>-->
+<!--    <input id='mapbox://styles/' type='radio' name='rtoggle' value='satellite'>-->
+<!--    <label for='satellite'>satellite</label>-->
+<!--    <input id='mapbox://styles/agaesser/cjuzybtpj45g71fqx19n42i0j' type='radio' name='rtoggle' value='2019-dec'>-->
+<!--    <label for='2019-dec'>2019 Dec</label>-->
+</div>
+
 <script>
   mapboxgl.accessToken = 'pk.eyJ1IjoiYWdhZXNzZXIiLCJhIjoiY2pvZGY5bmh4MWJtcTNsbWtmN2RmNnhiNCJ9.iwOotv1u0S92o-Vj2CCjag';
   var map = new mapboxgl.Map({
@@ -29,8 +39,8 @@
   });
 
   map.on('load', function() {
-    const url = 'https://lanebreach-geojson.s3-us-west-1.amazonaws.com/2019/2019.geojson';
-    map.addSource('2019', { type: 'geojson', data: url });
+    const baseUrl = 'https://lanebreach-geojson.s3-us-west-1.amazonaws.com/2019/';
+    map.addSource('2019', { type: 'geojson', data: baseUrl + '2019.geojson' });
 
     map.addLayer({
       'id': 'reports-heatmap',
@@ -66,6 +76,18 @@
     () => (this.map.getCanvas().style.cursor = "")
   );
 
+  var layerList = document.getElementById('menu');
+  var inputs = layerList.getElementsByTagName('input');
+
+  function switchLayer(layer) {
+    var layerId = layer.target.id;
+    map.setStyle(layerId);
+    map.style.sources
+  }
+  for (var i = 0; i < inputs.length; i++) {
+    inputs[i].onclick = switchLayer;
+  }
+
   map.on("click", "reports-points", e => {
     var props = e.features[0].properties;
     var coordinates = e.features[0].geometry.coordinates.slice();
@@ -99,6 +121,8 @@
       .setHTML(html)
       .addTo(map);
   });
+
+  map.addControl(new mapboxgl.NavigationControl());
 
 </script>
 
